@@ -1,4 +1,4 @@
-# lilmaci
+# Lilmaci!
 A game written in C made in ncurses where you control a fish on a quest to get something to eat.
 
 I will update this game whenever I feel like it, I plan on adding tons of new features and optimizations.
