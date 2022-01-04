@@ -1,9 +1,8 @@
 /*
 I apologize for excessive commenting in this tiny piece of code, I was alone and without an internet connection when I wrote this... I only had VSCode to talk to
 
-alright, so this is version 1.0 of Lilmaci, it needs a lot of work to be improved but I think this is a good start.
 newer versions should include more optimization, visual flare, and better fucking COLLISION DETECTION.
-they should definitely also include cleaner code, just in general, I threw this initial version together pretty quickly, but I'm still proud of it.
+they should definitely also include cleaner code, just in general, I threw the initial version together pretty quickly, but I'm still proud of it.
 and also an intro screen, a game over screen, and more fanfare in general, I mean a normal terminal with "You win!" isn't all that satisfying.
 the other fishies should probably also move up and down at random... I think that would actually add a lot to the game overall.
 */
@@ -12,7 +11,6 @@ the other fishies should probably also move up and down at random... I think tha
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-#include <string.h>
 
 #define GAMEWIDTH 64
 #define GAMEHEIGHT 16
@@ -61,16 +59,19 @@ int main() {
 
 	//initialize colours for enemy fishies
 	init_pair(0, COLOR_WHITE, COLOR_BLACK);
-	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
-	init_pair(2, COLOR_RED, COLOR_BLACK);
-	init_pair(3, COLOR_MAGENTA, COLOR_BLACK);
+	init_pair(1, COLOR_CYAN, COLOR_BLACK);
+	init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
+	init_pair(3, COLOR_RED, COLOR_BLACK);
 
 	//initialize colours for player fish
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 
+	//initialize colours for score display
+	init_pair(5, COLOR_YELLOW, COLOR_BLACK);
+
 	//gameloop
 	while(true) {
-		clear();
+		erase();
 		c = getch();
 		flushinp();
 
@@ -99,11 +100,13 @@ int main() {
 		}
 		attroff(COLOR_PAIR(4));
 
+		attron(COLOR_PAIR(5));
 		mvprintw(GAMEHEIGHT+1, 0, "Score: %i", score);
+		attroff(COLOR_PAIR(5));
 
 		for(int i = 0; i < FISHAMOUNT; i++) {
-			//this collision detection is shite but I didn't wanna sit here for weeks with this being the only thing holding me back
-			//I *know* the nested if-statement is yucky and this part is all shite in general actually BUT AT LEAST IT WORKS
+			//this collision detection is shite but I didn't wanna sit here for weeks with this being the only thing holding back progress
+			//I *know* the nested if-statement is yucky and this part is all shite in general actually BUT AT LEAST IT WORKS (kind of, sometimes it doesn't)
 			if(OtherFish[i].x > PlayerFish.x && OtherFish[i].x < PlayerFish.x + PlayerFish.length + 1 && OtherFish[i].y == PlayerFish.y) {
 				if(OtherFish[i].size < PlayerFish.size) {
 					score += (OtherFish[i].size+1)*100;
@@ -112,7 +115,7 @@ int main() {
 					OtherFish[i].size = rand()%4;
 				} else if(OtherFish[i].size > PlayerFish.size) {
 					endwin();
-					printf("You lose!\n");
+					printf("You were eaten!\n");
 					return 0;
 				} //if neither of these is true (ie the fish are of equal size) nothing is done
 			}
@@ -154,13 +157,10 @@ int main() {
 			}
 		}
 
-		//draw level, rewrite this piece of code until satifaction is reached (ad infinitum)
 		//make this its own window so that it isn't redrawn every frame, that eats cpu cycles like people with hangovers eat mcdonald's
 		//make the score display its own window while we're at it, that also does not need to be redrawn every frame, just when the actual score is updated
-		for(int i = 0; i <= GAMEWIDTH; i++) {
-			mvaddch(0, i, '#');
-			mvaddch(GAMEHEIGHT, i, '#');
-		}
+		mvhline(0, 0, ACS_HLINE, GAMEWIDTH);
+		mvhline(GAMEHEIGHT, 0, ACS_HLINE, GAMEWIDTH);
 
 		refresh();
 		usleep(125000); //crisp and smooth 8 FPS B)
