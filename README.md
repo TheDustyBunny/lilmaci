@@ -5,6 +5,9 @@
 "good gam 👍"
     - Coyotea
     
+"add this to the readme"
+    - Asoina
+    
 ### A tale untold.
 
 "A masterpiece, 11/10"
