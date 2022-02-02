@@ -1,6 +1,16 @@
-# Lilmaci!
-A game written in C made with ncurses where you control a fish on a quest to get something to eat.
+# From the creators of: nothing noteworthy
 
-I will update this game whenever I feel like it, I plan on adding tons of new features and optimizations.
-The game will always be a simple one and will probably always be contained within just one file.
-The main "goal" here is just to get the most fun out of the smallest amount of lines of code.
+# A game of subpar proportions.
+
+"good gam 👍"
+    - Coyotea
+    
+# A tale untold.
+
+"A masterpiece, 11/10"
+    - IGN, or something
+    
+
+#### Lilmaci: The Game About Fish
+
+(This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.")
