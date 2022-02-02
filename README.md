@@ -1,11 +1,11 @@
-# From the creators of: nothing noteworthy
+### From the creators of: nothing noteworthy
 
-# A game of subpar proportions.
+### A game of subpar proportions.
 
 "good gam 👍"
     - Coyotea
     
-# A tale untold.
+### A tale untold.
 
 "A masterpiece, 11/10"
     - IGN, or something
