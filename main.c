@@ -1,5 +1,6 @@
 /*
-I apologize for excessive commenting in this tiny piece of code, I was alone and without an internet connection when I wrote this... I only had VSCode to talk to
+I apologize for excessive commenting in this tiny piece of code, I was alone and without an internet connection when I wrote the initial version...
+I only had VSCode to talk to
 
 newer versions should include more optimization, visual flare, and better fucking COLLISION DETECTION.
 they should definitely also include cleaner code, just in general, I threw the initial version together pretty quickly, but I'm still proud of it.
@@ -11,37 +12,185 @@ the other fishies should probably also move up and down at random... I think tha
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <locale.h>
+#include <string.h>
+
+//used this so much it began looking really ugly in the code, so I just made it a macro because "sizeof" is apparently weird with functions; works fine like this
+#define arrlen( array ) ( sizeof( array ) / sizeof( array[0] ) )
 
 #define GAMEWIDTH 64
 #define GAMEHEIGHT 16
 #define FISHAMOUNT 10 //I recommend keeping this below gameheight so that there's always an opening to swim past the other fishies
 
-/*
-todo: add a way to detect multiple keypresses at the same time
-probably involving a linked list and a for loop that will continue to accept getches until ERR is returned
-*/
-
-enum Size{TINY, SMALL, MEDIUM, LARGE};
+enum Size { TINY, SMALL, MEDIUM, LARGE };
 
 struct Fish {
 	short x, y, length;
 	enum Size size;
 };
 
+struct MenuItem {
+	char* text;
+	char ID;
+};
+
+//functions :)
+int PlayGame();
+int ShowMenu();
+int ShowLicense();
+
 int main() {
+
+	//this allows us to use funny characters in ncurses
+	setlocale(LC_ALL, "");
+
+	//start ncurses exactly how I want it
+	initscr();
+	start_color();
+	curs_set(0);
+	cbreak();
+	noecho();
+
+	ShowMenu();
+
+	endwin();
+	return 0;
+}
+
+
+//----------------------------------------
+
+
+//show the main menu
+int ShowMenu() {
+	
+	WINDOW* MainMenu = newwin(LINES, COLS, LINES/2-GAMEHEIGHT/2, COLS/2-GAMEWIDTH/2);
+	nodelay(MainMenu, true);
+
+	struct MenuItem PlayOption = { "Play!", 'P' };
+	struct MenuItem ScoreboardOption = { "[WIP] Scoreboard!", 'S' };
+	struct MenuItem LicenseOption = { "Software License!", 'L' };
+	struct MenuItem ExitOption = { "Exit!", 'X' };
+	
+	struct MenuItem options[] = { PlayOption, ScoreboardOption, LicenseOption, ExitOption };
+
+    char c;
+    short choice = 0;
+	int retscore = 0;
+	bool acted = false;
+
+	//initialize colours for displaying stuff on the menu, as one does
+	init_pair(6, COLOR_GREEN, COLOR_BLACK);
+	init_pair(7, COLOR_YELLOW, COLOR_BLACK);
+
+	while(true) {
+		c = wgetch(MainMenu);
+		if(c != ERR) { acted = true; }
+
+		if(c == 's' && choice < arrlen(options)-1) { choice++; werase(MainMenu); }
+		if(c == 'w' && choice > 0) { choice--; werase(MainMenu); }
+		if(c == ' ') {
+			switch (options[choice].ID) {
+			case 'P':
+				retscore = PlayGame();
+				break;
+			case 'X':
+				delwin(MainMenu);
+				return 0;
+				break;
+			case 'L':
+				werase(MainMenu);
+				ShowLicense();
+				break;
+			}
+		}
+
+		wattron(MainMenu, COLOR_PAIR(6));
+		mvwprintw(MainMenu, GAMEHEIGHT/2-5, GAMEWIDTH/2-9, "Lilmaci!");
+		wattroff(MainMenu, COLOR_PAIR(6));
+
+		wattron(MainMenu, COLOR_PAIR(7));
+		mvwprintw(MainMenu, GAMEHEIGHT/2-5, GAMEWIDTH/2, "Main Menu!");
+		wattroff(MainMenu, COLOR_PAIR(7));
+
+		if(!acted) {
+			mvwprintw(MainMenu, GAMEHEIGHT/2-4, GAMEWIDTH/2-26, "(Use [WS] and [SPACE] to make selections in the menu)");
+		}
+
+		if(retscore) {
+			mvwprintw(MainMenu, GAMEHEIGHT/2-4, GAMEWIDTH/2-12, "Your latest score was ");
+			wattron(MainMenu, COLOR_PAIR(7));
+			mvwprintw(MainMenu, GAMEHEIGHT/2-4, GAMEWIDTH/2+10, "%i!", retscore);
+			wattroff(MainMenu, COLOR_PAIR(7));
+		}
+
+		for(int i = 0; i < arrlen(options); i++) {
+			if(i == choice) {
+				wattron(MainMenu, COLOR_PAIR(6));
+				mvwprintw(MainMenu, GAMEHEIGHT/2-(arrlen(options))/2+i, GAMEWIDTH/2-strlen(options[i].text)/2-4, "><>");
+				wattroff(MainMenu, COLOR_PAIR(6));
+
+                wattron(MainMenu, A_REVERSE);
+			}
+
+			mvwprintw(MainMenu, GAMEHEIGHT/2-(arrlen(options))/2+i, GAMEWIDTH/2-strlen(options[i].text)/2, "%s\n", options[i].text);
+            wattroff(MainMenu, A_REVERSE);
+		}
+
+		wrefresh(MainMenu);
+    }
+	
+	return 0;
+}
+
+
+//----------------------------------------
+
+
+int ShowLicense() {
+
+	WINDOW* LicenseWindow = newwin(LINES, COLS, LINES/2-GAMEHEIGHT/2, COLS/2-GAMEWIDTH/2);
+
+	wprintw(LicenseWindow, "This program is free software: you can redistribute it and/or modify\n"
+	"it under the terms of the GNU General Public License as published by\n"
+	"the Free Software Foundation, either version 3 of the License, or\n"
+	"(at your option) any later version.\n"
+	"\n"
+	"This program is distributed in the hope that it will be useful,\n"
+	"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+	"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+	"GNU General Public License for more details.\n"
+	"\n"
+	"You should have received a copy of the GNU General Public License\n"
+	"along with this program.  If not, see <https://www.gnu.org/licenses/>.");
+
+	wrefresh(LicenseWindow);
+	wgetch(LicenseWindow);
+	delwin(LicenseWindow);
+	return 0;
+}
+
+
+//----------------------------------------
+
+
+//the actual game function itself, including the gameloop ;))))))
+int PlayGame() {
 
 	//variable setup
 	srand(time(NULL));
 	int score = 0;
+	int belly = 0;
+	int iframes = 0;
 	char c;
-	char* egg = ".";
+	char* egg = "·";
 	char* sfish = "~";
 	char* mfishl = "<><";
 	char* lfishl = "<((><<";
 	char* mfishr = "><>";
 	char* lfishr = ">><))>";
 
-	struct Fish PlayerFish = { 10, 5, 1 }; //the size doesn't matter here, because it will be set to SMALL anyway when the game starts
+	struct Fish PlayerFish = { 10, 5, 1, 1 };
 
 	struct Fish OtherFish[FISHAMOUNT];
 	for(int i = 0; i < FISHAMOUNT; i++) {
@@ -50,12 +199,8 @@ int main() {
 	}
 
 	//inits
-	initscr();
-	start_color();
-	curs_set(0);
-	cbreak();
-	noecho();
-	nodelay(stdscr, 1);
+	WINDOW* GameWindow = newwin(LINES, COLS, LINES/2-GAMEHEIGHT/2, COLS/2-GAMEWIDTH/2);
+	nodelay(GameWindow, 1);
 
 	//initialize colours for enemy fishies
 	init_pair(0, COLOR_WHITE, COLOR_BLACK);
@@ -71,8 +216,8 @@ int main() {
 
 	//gameloop
 	while(true) {
-		erase();
-		c = getch();
+		werase(GameWindow);
+		c = wgetch(GameWindow);
 		flushinp();
 
 		if(c == 'w' && PlayerFish.y > 1) { PlayerFish.y -= 1; }
@@ -80,44 +225,54 @@ int main() {
 		if(c == 's' && PlayerFish.y < GAMEHEIGHT-1) { PlayerFish.y += 1; }
 		if(c == 'd' && PlayerFish.x < GAMEWIDTH) { PlayerFish.x += 2; }
 
-		attron(COLOR_PAIR(4));
-		if(score >= 0 && score < 1000) {
-			PlayerFish.length = 1;
-			PlayerFish.size = SMALL;
-			mvprintw(PlayerFish.y, PlayerFish.x, sfish);
-		} else if(score >= 1000 && score < 3000) {
-			PlayerFish.length = 3;
-			PlayerFish.size = MEDIUM;
-			mvprintw(PlayerFish.y, PlayerFish.x, mfishr);
-		} else if(score >= 3000 && score < 6000) {
-			PlayerFish.length = 6;
-			PlayerFish.size = LARGE;
-			mvprintw(PlayerFish.y, PlayerFish.x, lfishr);
-		} else {
-			endwin();
-			printf("You win!\n");
-			return 0;
-		}
-		attroff(COLOR_PAIR(4));
+		//exit game immediately if esc is pressed... should probably just make this a pause button
+		if(c == 27) { delwin(GameWindow); return score; }
 
-		attron(COLOR_PAIR(5));
-		mvprintw(GAMEHEIGHT+1, 0, "Score: %i", score);
-		attroff(COLOR_PAIR(5));
+		wattron(GameWindow, COLOR_PAIR(4));
+		if(iframes > 0) { wattron(GameWindow, A_REVERSE); }
+
+		if(PlayerFish.size == SMALL) {
+			PlayerFish.length = 1;
+			mvwprintw(GameWindow, PlayerFish.y, PlayerFish.x, sfish);
+		} else if(PlayerFish.size == MEDIUM) {
+			PlayerFish.length = 3;
+			mvwprintw(GameWindow, PlayerFish.y, PlayerFish.x, mfishr);
+		} else if(PlayerFish.size == LARGE) {
+			PlayerFish.length = 6;
+			mvwprintw(GameWindow, PlayerFish.y, PlayerFish.x, lfishr);
+		}
+
+		wattroff(GameWindow, COLOR_PAIR(4));
+		wattroff(GameWindow, A_REVERSE);
+
+		wattron(GameWindow, COLOR_PAIR(5));
+		mvwprintw(GameWindow, GAMEHEIGHT+1, 0, "Score: %i", score);
+		wattroff(GameWindow, COLOR_PAIR(5));
 
 		for(int i = 0; i < FISHAMOUNT; i++) {
 			//this collision detection is shite but I didn't wanna sit here for weeks with this being the only thing holding back progress
 			//I *know* the nested if-statement is yucky and this part is all shite in general actually BUT AT LEAST IT WORKS (kind of, sometimes it doesn't)
-			if(OtherFish[i].x > PlayerFish.x && OtherFish[i].x < PlayerFish.x + PlayerFish.length + 1 && OtherFish[i].y == PlayerFish.y) {
+			if( iframes <= 0 && OtherFish[i].x > PlayerFish.x - 2 && OtherFish[i].x < PlayerFish.x + PlayerFish.length + 1 && OtherFish[i].y == PlayerFish.y) {
 				if(OtherFish[i].size < PlayerFish.size) {
 					score += (OtherFish[i].size+1)*100;
+					belly += (OtherFish[i].size+1)*10;
 					OtherFish[i].x = GAMEWIDTH;
 					OtherFish[i].y = rand()%(GAMEHEIGHT-1)+1;
 					OtherFish[i].size = rand()%4;
 				} else if(OtherFish[i].size > PlayerFish.size) {
-					endwin();
-					printf("You were eaten!\n");
-					return 0;
-				} //if neither of these is true (ie the fish are of equal size) nothing is done
+					belly = 0;
+					iframes = 10;
+					score -= 100;
+					PlayerFish.size--;
+				} else {
+					belly = 0;
+					iframes = 10;
+					score -= 100;
+					PlayerFish.size--;
+					OtherFish[i].x = GAMEWIDTH;
+					OtherFish[i].y = rand()%(GAMEHEIGHT-1)+1;
+					OtherFish[i].size = rand()%4;
+				}
 			}
 
 			//this controls the speed of the fishies, every frame they move at least 1 unit, but have a 25% chance of moving 2
@@ -127,24 +282,24 @@ int main() {
 
 			switch(OtherFish[i].size) { //this switch statement decides which way to "draw" the fish (includes colour) depending on their size stat
 			case TINY:
-				attron(COLOR_PAIR(0));
-				mvprintw(OtherFish[i].y, OtherFish[i].x, egg);
-				attroff(COLOR_PAIR(0));
+				wattron(GameWindow, COLOR_PAIR(0));
+				mvwprintw(GameWindow, OtherFish[i].y, OtherFish[i].x, egg);
+				wattroff(GameWindow, COLOR_PAIR(0));
 				break;
 			case SMALL:
-				attron(COLOR_PAIR(1));
-				mvprintw(OtherFish[i].y, OtherFish[i].x, sfish);
-				attroff(COLOR_PAIR(1));
+				wattron(GameWindow, COLOR_PAIR(1));
+				mvwprintw(GameWindow, OtherFish[i].y, OtherFish[i].x, sfish);
+				wattroff(GameWindow, COLOR_PAIR(1));
 				break;
 			case MEDIUM:
-				attron(COLOR_PAIR(2));
-				mvprintw(OtherFish[i].y, OtherFish[i].x, mfishl);
-				attroff(COLOR_PAIR(2));
+				wattron(GameWindow, COLOR_PAIR(2));
+				mvwprintw(GameWindow, OtherFish[i].y, OtherFish[i].x, mfishl);
+				wattroff(GameWindow, COLOR_PAIR(2));
 				break;
 			case LARGE:
-				attron(COLOR_PAIR(3));
-				mvprintw(OtherFish[i].y, OtherFish[i].x, lfishl);
-				attroff(COLOR_PAIR(3));
+				wattron(GameWindow, COLOR_PAIR(3));
+				mvwprintw(GameWindow, OtherFish[i].y, OtherFish[i].x, lfishl);
+				wattroff(GameWindow, COLOR_PAIR(3));
 				break;
 			}
 
@@ -157,15 +312,26 @@ int main() {
 			}
 		}
 
+		//health management for playerfish
+		if(PlayerFish.size <= 0) {
+			delwin(GameWindow);
+			return score;
+		} else if(belly >= PlayerFish.size*100 && PlayerFish.size < LARGE) {
+			belly = 0;
+			PlayerFish.size++;
+		}
+
 		//make this its own window so that it isn't redrawn every frame, that eats cpu cycles like people with hangovers eat mcdonald's
 		//make the score display its own window while we're at it, that also does not need to be redrawn every frame, just when the actual score is updated
-		mvhline(0, 0, ACS_HLINE, GAMEWIDTH);
-		mvhline(GAMEHEIGHT, 0, ACS_HLINE, GAMEWIDTH);
+		mvwhline(GameWindow, 0, 0, ACS_HLINE, GAMEWIDTH);
+		mvwhline(GameWindow, GAMEHEIGHT, 0, ACS_HLINE, GAMEWIDTH);
 
-		refresh();
+		if(iframes > 0) iframes--;
+
+		wrefresh(GameWindow);
 		usleep(125000); //crisp and smooth 8 FPS B)
 	}
 
-	endwin();
+	delwin(GameWindow);
 	return 0;
 }
