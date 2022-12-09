@@ -87,6 +87,10 @@ int ShowMenu() {
 		c = wgetch(MainMenu);
 		if(c != ERR) { acted = true; }
 
+		// vim movement in menu
+		if(c == 'j' && choice < arrlen(options)-1) { choice++; werase(MainMenu); }
+		if(c == 'k' && choice > 0) { choice--; werase(MainMenu); }
+
 		if(c == 's' && choice < arrlen(options)-1) { choice++; werase(MainMenu); }
 		if(c == 'w' && choice > 0) { choice--; werase(MainMenu); }
 		if(c == ' ') {
@@ -138,7 +142,7 @@ int ShowMenu() {
 		}
 
 		wrefresh(MainMenu);
-		usleep(6969696969696);
+		usleep(696969696969696969); // this makes the main menu not consume as much of the cpu for some reason
     }
 	
 	return 0;
@@ -220,6 +224,12 @@ int PlayGame() {
 		werase(GameWindow);
 		c = wgetch(GameWindow);
 		flushinp();
+
+		// vim movement in the game
+		if(c == 'k' && PlayerFish.y > 1) { PlayerFish.y -= 1; }
+		if(c == 'h' && PlayerFish.x > 0) { PlayerFish.x -= 2; }
+		if(c == 'j' && PlayerFish.y < GAMEHEIGHT-1) { PlayerFish.y += 1; }
+		if(c == 'l' && PlayerFish.x < GAMEWIDTH) { PlayerFish.x += 2; }
 
 		if(c == 'w' && PlayerFish.y > 1) { PlayerFish.y -= 1; }
 		if(c == 'a' && PlayerFish.x > 0) { PlayerFish.x -= 2; }
@@ -330,7 +340,7 @@ int PlayGame() {
 		if(iframes > 0) iframes--;
 
 		wrefresh(GameWindow);
-		usleep(125000); //crisp and smooth 8 FPS B)
+		usleep(33000); //crisp and smooth 30 FPS B)
 	}
 
 	delwin(GameWindow);
