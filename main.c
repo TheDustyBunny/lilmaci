@@ -340,7 +340,7 @@ int PlayGame() {
 		if(iframes > 0) iframes--;
 
 		wrefresh(GameWindow);
-		usleep(33000); //crisp and smooth 30 FPS B)
+		usleep(125000); //crisp and smooth 8 FPS B)
 	}
 
 	delwin(GameWindow);
