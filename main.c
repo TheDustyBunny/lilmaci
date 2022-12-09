@@ -138,6 +138,7 @@ int ShowMenu() {
 		}
 
 		wrefresh(MainMenu);
+		usleep(6969696969696);
     }
 	
 	return 0;
